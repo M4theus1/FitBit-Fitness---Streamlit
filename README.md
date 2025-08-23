@@ -1,7 +1,3 @@
-Com certeza\! Baseado no excelente exemplo que você forneceu e no trabalho que fizemos com os dados do Fitbit, aqui está uma proposta de `README.md` para o seu projeto.
-
------
-
 # Análise de Dados Fitness com Streamlit (Fitbit)
 
 Dashboard interativo para análise exploratória de dados do Fitbit, classificação de atividade de usuários e visualização de padrões de saúde, utilizando Streamlit e Scikit-learn.
