@@ -2,9 +2,12 @@ import streamlit as st
 import pandas as pd
 import os
 import pickle
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # --- Importações do Projeto ---
-from core.data.io import read_csv_smart
+from core.data.io import load_daily_activity
 from core.data.database import (
     create_database_and_tables,
     insert_csv_to_sor,
@@ -21,7 +24,7 @@ from core.explain.coefficients import extract_linear_importances
 from core.chatbot.rules import answer_from_metrics
 
 # --- Configurações da Página e Estado ---
-st.set_page_config(page_title="Análise de Vendas", layout="wide")
+st.set_page_config(page_title="Análise de Atividade Física - Dashboard Interativo", layout="wide")
 
 # (O resto do estado da sessão permanece o mesmo)
 if "model_trained" not in st.session_state:
@@ -49,7 +52,7 @@ def convert_df_to_csv(df):
     return df.to_csv(index=False).encode('utf-8')
 
 # --- Título e Sidebar ---
-st.title("🧪 Pipeline de Previsão de Vendas")
+st.title("🧪 Pipeline de Usuários Mais Ativos")
 
 with st.sidebar:
     st.header("1. Upload dos Dados")
@@ -68,7 +71,7 @@ with st.sidebar:
         df_train = None
         for file in uploaded_files:
             if "train" in file.name.lower():
-                df_train = read_csv_smart(file)
+                df_train = load_daily_activity(file)
         
         if df_train is not None:
             with st.spinner("Treinando o modelo..."):
@@ -102,7 +105,7 @@ with st.sidebar:
             df_test = None
             for file in uploaded_files:
                 if "test" in file.name.lower():
-                    df_test = read_csv_smart(file)
+                    df_test = load_daily_activity(file)
             
             if df_test is not None:
                 with st.spinner("Carregando modelo e fazendo previsões..."):
