@@ -1,21 +1,77 @@
 import pandas as pd
+import os  # Adicionar esta linha
 
 def load_daily_activity(path="data/dailyActivity_merged.csv"):
     """
     Carrega e pré-processa o dataset dailyActivity_merged.csv.
     """
     try:
-        # Carrega o CSV, a função read_csv_smart já está embutida no read_csv padrão
-        # mas vamos ser explícitos para garantir que a separação seja correta.
-        df = pd.read_csv(path)
+        # Verifica se o arquivo existe
+        if not os.path.exists(path):
+            print(f"Erro: O arquivo não foi encontrado no caminho '{path}'")
+            return None
         
-        # Converte a coluna de data para o formato datetime
-        # Isso é crucial para qualquer análise temporal
-        df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], format='%m/%d/%Y')
+        # Verifica se o arquivo não está vazio
+        if os.path.getsize(path) == 0:
+            print(f"Erro: O arquivo '{path}' está vazio")
+            return None
         
-        return df
+        # Tenta carregar o CSV com diferentes encodings
+        encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+        
+        for encoding in encodings:
+            try:
+                df = pd.read_csv(path, encoding=encoding)
+                # Verifica se o DataFrame não está vazio
+                if df.empty:
+                    print(f"Aviso: DataFrame vazio com encoding {encoding}")
+                    continue
+                    
+                # Tenta converter a coluna de data
+                try:
+                    df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], format='%Y-%m-%d %H:%M:%S')
+                except (ValueError, KeyError):
+                    try:
+                        df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], format='%Y-%m-%d')
+                    except (ValueError, KeyError):
+                        try:
+                            df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], format='%m/%d/%Y')
+                        except (ValueError, KeyError):
+                            df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], errors='coerce')
+                
+                print(f"Arquivo carregado com sucesso usando encoding: {encoding}")
+                return df
+                
+            except (pd.errors.EmptyDataError, UnicodeDecodeError) as e:
+                print(f"Falha com encoding {encoding}: {e}")
+                continue
+            except Exception as e:
+                print(f"Erro inesperado com encoding {encoding}: {e}")
+                continue
+        
+        print("Todos os encodings falharam. Tentando carregar sem especificar encoding...")
+        try:
+            df = pd.read_csv(path)
+            if not df.empty:
+                # Tenta converter a data
+                try:
+                    df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], errors='coerce')
+                except KeyError:
+                    print("Coluna 'ActivityDate' não encontrada no arquivo")
+                
+                return df
+            else:
+                print("DataFrame ainda está vazio")
+                return None
+        except Exception as e:
+            print(f"Erro final ao tentar carregar arquivo: {e}")
+            return None
+            
     except FileNotFoundError:
         print(f"Erro: O arquivo não foi encontrado no caminho '{path}'")
+        return None
+    except Exception as e:
+        print(f"Erro inesperado ao carregar arquivo: {e}")
         return None
 
 def get_most_active_users_calories(df, top_n=10):
