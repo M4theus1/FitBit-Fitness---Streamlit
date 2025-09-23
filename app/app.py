@@ -136,39 +136,6 @@ with st.sidebar:
         else:
             st.warning("Nenhum dado válido de atividade física foi encontrado nos arquivos uploadados.")
 
-    # --- AÇÃO 2: Fazer previsões com novos dados ---
-    st.subheader("Fazer Previsões com Novos Dados")
-    if st.button("Carregar Modelo e Fazer Previsões"):
-        if not os.path.exists(MODEL_PATH):
-            st.error("Nenhum modelo treinado foi encontrado! Por favor, execute o treinamento primeiro.")
-        else:
-            df_new_data = None
-            for file in uploaded_files:
-                if "daily" in file.name.lower() or "activity" in file.name.lower():
-                    df_new_data = load_daily_activity(file)
-            
-            if df_new_data is not None:
-                with st.spinner("Processando dados e fazendo previsões..."):
-                    # Processa os dados para previsão
-                    run_etl_for_predict_data(df_new_data)
-                    df_spec_predict = load_data("spec_daily_activity_predict")
-                    
-                    # Carrega o modelo
-                    with open(MODEL_PATH, 'rb') as f:
-                        model = pickle.load(f)
-
-                    # Faz a previsão (remove a variável alvo se existir)
-                    X_predict = df_spec_predict.drop(columns=[st.session_state.target_variable], errors='ignore')
-                    predictions = model.predict(X_predict)
-                    
-                    # Prepara resultado
-                    result_df = df_spec_predict.copy()
-                    result_df[f'Predicted_{st.session_state.target_variable}'] = predictions
-                    st.session_state.prediction_df = result_df
-                    st.session_state.predictions_made = True
-                st.success("Previsões geradas com sucesso!")
-            else:
-                st.warning("Arquivo de atividade física não encontrado.")
     
     # --- AÇÃO 3: Limpeza ---
     st.header("3. Manutenção")
@@ -182,7 +149,7 @@ with st.sidebar:
 
 # --- Abas Principais ---
 tab_overview, tab_train, tab_predict, tab_analytics, tab_chat = st.tabs([
-    "📊 Visão Geral", "🤖 Resultados do Treino", "🚀 Previsões", "📈 Analytics", "💬 Chat com o Modelo"
+    "📊 Visão Geral", "🤖 Resultados do Treino", "📈 Analytics", "💬 Chat com o Modelo"
 ])
 
 with tab_overview:
@@ -226,33 +193,11 @@ with tab_train:
     st.header("Métricas e Importância do Modelo")
     if not st.session_state.model_trained and st.session_state.metrics is None:
         st.info("Execute o treinamento na barra lateral para ver os resultados.")
-    else:
-        st.subheader(f"📈 Métricas para previsão de {st.session_state.target_variable}")
-        st.json(st.session_state.metrics)
-        st.subheader("🔎 Importâncias das Variáveis")
-        st.dataframe(st.session_state.importances.head(15), use_container_width=True)
-        
         # Visualização das importâncias
         if not st.session_state.importances.empty:
             st.subheader("📊 Gráfico de Importâncias")
             importance_chart_data = st.session_state.importances.head(10).sort_values('importance', ascending=True)
             st.bar_chart(importance_chart_data.set_index('feature')['importance'])
-
-with tab_predict:
-    st.header("Previsões para Novos Dados")
-    if not st.session_state.predictions_made:
-        st.info("Faça uma previsão na barra lateral para ver os resultados.")
-    else:
-        st.subheader(f"Previsões de {st.session_state.target_variable}")
-        st.dataframe(st.session_state.prediction_df)
-        
-        csv_data = convert_df_to_csv(st.session_state.prediction_df)
-        st.download_button(
-           label="Download das Previsões em CSV",
-           data=csv_data,
-           file_name='activity_predictions.csv',
-           mime='text/csv',
-        )
 
 with tab_analytics:
     st.header("Análises e Estatísticas")
