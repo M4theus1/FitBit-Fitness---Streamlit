@@ -22,22 +22,26 @@ def load_daily_activity(path="data/dailyActivity_merged.csv"):
         for encoding in encodings:
             try:
                 df = pd.read_csv(path, encoding=encoding)
-                # Verifica se o DataFrame não está vazio
+                
                 if df.empty:
                     print(f"Aviso: DataFrame vazio com encoding {encoding}")
                     continue
                     
                 # Tenta converter a coluna de data
                 try:
-                    df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], format='%Y-%m-%d %H:%M:%S')
+                    df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
                 except (ValueError, KeyError):
                     try:
-                        df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], format='%Y-%m-%d')
+                        df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], format='%Y-%m-%d', errors='coerce')
                     except (ValueError, KeyError):
                         try:
-                            df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], format='%m/%d/%Y')
+                            df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], format='%m/%d/%Y', errors='coerce')
                         except (ValueError, KeyError):
                             df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], errors='coerce')
+                
+                # 🔑 Converte para date (compatível com Streamlit/Arrow)
+                if 'ActivityDate' in df.columns:
+                    df['ActivityDate'] = df['ActivityDate'].dt.date
                 
                 print(f"Arquivo carregado com sucesso usando encoding: {encoding}")
                 return df
@@ -49,13 +53,15 @@ def load_daily_activity(path="data/dailyActivity_merged.csv"):
                 print(f"Erro inesperado com encoding {encoding}: {e}")
                 continue
         
+        # Caso todos os encodings falhem
         print("Todos os encodings falharam. Tentando carregar sem especificar encoding...")
         try:
             df = pd.read_csv(path)
             if not df.empty:
-                # Tenta converter a data
                 try:
                     df['ActivityDate'] = pd.to_datetime(df['ActivityDate'], errors='coerce')
+                    if 'ActivityDate' in df.columns:
+                        df['ActivityDate'] = df['ActivityDate'].dt.date
                 except KeyError:
                     print("Coluna 'ActivityDate' não encontrada no arquivo")
                 
@@ -73,6 +79,7 @@ def load_daily_activity(path="data/dailyActivity_merged.csv"):
     except Exception as e:
         print(f"Erro inesperado ao carregar arquivo: {e}")
         return None
+
 
 def get_most_active_users_calories(df, top_n=10):
     """

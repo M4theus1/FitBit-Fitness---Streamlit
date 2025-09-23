@@ -40,7 +40,7 @@ if "chat_messages" not in st.session_state:
 if "metrics" not in st.session_state:
     st.session_state.metrics = None
 if "importances" not in st.session_state:
-    st.session_state.importances = None
+    st.session_state.importances = pd.DataFrame(columns=["feature", "importance"])
 
 # --- Diretórios ---
 MODEL_DIR = "model"
@@ -71,7 +71,7 @@ with st.sidebar:
     test_size = st.slider("Tamanho do conjunto de teste (validação)", 0.1, 0.4, 0.2, 0.05)
     target_variable = st.selectbox(
         "Variável Alvo para Previsão",
-        ["Calories", "TotalSteps", "TotalActiveMinutes", "SedentaryMinutes"]
+        ["Calories"]
     )
     
     if st.button("Executar Treinamento"):
@@ -92,7 +92,7 @@ with st.sidebar:
                     os.remove(temp_path)
                     
                     if df_data is not None and not df_data.empty:
-                        break
+                         st.session_state.df_overview = df_data
                         
                 except Exception as e:
                     st.error(f"Erro ao processar arquivo {file.name}: {e}")
@@ -148,56 +148,49 @@ with st.sidebar:
         st.rerun()
 
 # --- Abas Principais ---
-tab_overview, tab_train, tab_predict, tab_analytics, tab_chat = st.tabs([
+tab_overview, tab_train, tab_analytics, tab_chat = st.tabs([
     "📊 Visão Geral", "🤖 Resultados do Treino", "📈 Analytics", "💬 Chat com o Modelo"
 ])
 
 with tab_overview:
     st.header("Visão Geral dos Dados de Atividade")
-    if uploaded_files:
-        for file in uploaded_files:
-            if "daily" in file.name.lower() or "activity" in file.name.lower():
-                try:
-                    # Salva o arquivo temporariamente
-                    temp_path = f"temp_overview_{file.name}"
-                    with open(temp_path, "wb") as f:
-                        f.write(file.getbuffer())
-                    
-                    # Carrega o arquivo
-                    df_overview = load_daily_activity(temp_path)
-                    
-                    # Remove o arquivo temporário
-                    os.remove(temp_path)
-                    
-                    if df_overview is not None and not df_overview.empty:
-                        st.subheader(f"Arquivo: {file.name}")
-                        st.dataframe(df_overview.head())
-                        
-                        st.subheader("Estatísticas descritivas")
-                        st.dataframe(df_overview.describe())
-                        
-                        st.subheader("Informações do dataset")
-                        st.write(f"**Formato:** {df_overview.shape[0]} linhas × {df_overview.shape[1]} colunas")
-                        if 'ActivityDate' in df_overview.columns:
-                            st.write(f"**Período:** {df_overview['ActivityDate'].min()} até {df_overview['ActivityDate'].max()}")
-                        break
-                    else:
-                        st.warning(f"O arquivo {file.name} está vazio ou não pôde ser carregado.")
-                        
-                except Exception as e:
-                    st.error(f"Erro ao carregar arquivo {file.name}: {e}")
+    if "df_overview" in st.session_state and st.session_state.df_overview is not None:
+        df_overview = st.session_state.df_overview
+        st.subheader("Preview do Dataset")
+        st.dataframe(df_overview.head())
+
+        st.subheader("Estatísticas descritivas")
+        st.dataframe(df_overview.describe())
+
+        st.subheader("Informações do Dataset")
+        st.write(f"Formato: {df_overview.shape[0]} linhas × {df_overview.shape[1]} colunas")
+        if 'ActivityDate' in df_overview.columns:
+            st.write(f"Período: {df_overview['ActivityDate'].min()} até {df_overview['ActivityDate'].max()}")
     else:
-        st.info("Faça upload do arquivo DailyActivityMerged.csv para ver a visão geral.")
+        st.info("Faça upload do arquivo DailyActivityMerged.csv ou treine um modelo para ver a visão geral.")
+
 
 with tab_train:
     st.header("Métricas e Importância do Modelo")
     if not st.session_state.model_trained and st.session_state.metrics is None:
         st.info("Execute o treinamento na barra lateral para ver os resultados.")
         # Visualização das importâncias
-        if not st.session_state.importances.empty:
+        if (
+            not st.session_state.importances.empty
+            and "feature" in st.session_state.importances.columns
+            and "importance" in st.session_state.importances.columns
+        ):
             st.subheader("📊 Gráfico de Importâncias")
-            importance_chart_data = st.session_state.importances.head(10).sort_values('importance', ascending=True)
+            importance_chart_data = (
+                st.session_state.importances
+                .head(10)
+                .sort_values('importance', ascending=True)
+            )
             st.bar_chart(importance_chart_data.set_index('feature')['importance'])
+        else:
+            st.info("Ainda não há dados de importância para exibir.")
+
+
 
 with tab_analytics:
     st.header("Análises e Estatísticas")
