@@ -198,4 +198,8 @@ def get_daily_activity_stats():
     """
     df = pd.read_sql_query(query, conn)
     conn.close()
+
+    # Garantir que ActivityDate é datetime
+    df['ActivityDate'] = pd.to_datetime(df['ActivityDate'])
+
     return df

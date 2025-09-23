@@ -194,16 +194,6 @@ with tab_analytics:
             
             st.subheader("📈 Estatísticas Diárias")
             st.dataframe(daily_stats.head(10))
-            
-            # Gráficos simples
-            col1, col2 = st.columns(2)
-            with col1:
-                st.line_chart(daily_stats.set_index('ActivityDate')['DailySteps'])
-                st.caption("Passos Diários")
-            
-            with col2:
-                st.line_chart(daily_stats.set_index('ActivityDate')['DailyCalories'])
-                st.caption("Calorias Diárias")
                 
         except Exception as e:
             st.warning(f"Não foi possível carregar análises: {e}")
@@ -225,7 +215,6 @@ with tab_chat:
                 task="Regressão",
                 metrics_df_or_dict=st.session_state.metrics,
                 importances_df=st.session_state.importances,
-                target_variable=st.session_state.target_variable
             )
             st.session_state.chat_messages.append({"role": "assistant", "content": response})
             st.rerun()
