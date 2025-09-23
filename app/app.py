@@ -174,21 +174,11 @@ with tab_train:
     st.header("Métricas e Importância do Modelo")
     if not st.session_state.model_trained and st.session_state.metrics is None:
         st.info("Execute o treinamento na barra lateral para ver os resultados.")
-        # Visualização das importâncias
-        if (
-            not st.session_state.importances.empty
-            and "feature" in st.session_state.importances.columns
-            and "importance" in st.session_state.importances.columns
-        ):
-            st.subheader("📊 Gráfico de Importâncias")
-            importance_chart_data = (
-                st.session_state.importances
-                .head(10)
-                .sort_values('importance', ascending=True)
-            )
-            st.bar_chart(importance_chart_data.set_index('feature')['importance'])
-        else:
-            st.info("Ainda não há dados de importância para exibir.")
+    else:
+        st.subheader(f"📈 Métricas para previsão de {st.session_state.target_variable}")
+        st.json(st.session_state.metrics)
+        st.subheader("🔎 Importâncias das Variáveis")
+        st.dataframe(st.session_state.importances.head(15), use_container_width=True)
 
 
 
