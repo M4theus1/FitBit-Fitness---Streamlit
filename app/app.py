@@ -24,6 +24,7 @@ from core.models.train import train_regressor
 from core.models.predict import evaluate_regressor
 from core.explain.coefficients import extract_linear_importances
 from core.chatbot.rules import answer_from_metrics
+from core.chatbot.rag import rag_pipeline
 
 # --- Configurações da Página e Estado ---
 st.set_page_config(page_title="Análise de Atividade Física - Dashboard Interativo", layout="wide")
@@ -210,11 +211,6 @@ with tab_chat:
                 st.markdown(message["content"])
         if prompt := st.chat_input(f"Pergunte sobre a previsão de {st.session_state.target_variable}..."):
             st.session_state.chat_messages.append({"role": "user", "content": prompt})
-            response = answer_from_metrics(
-                question=prompt,
-                task="Regressão",
-                metrics_df_or_dict=st.session_state.metrics,
-                importances_df=st.session_state.importances,
-            )
+            response = rag_pipeline(prompt)
             st.session_state.chat_messages.append({"role": "assistant", "content": response})
             st.rerun()
