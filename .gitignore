@@ -8,4 +8,4 @@ __pycache__/
 *.pyc
 
 # Arquivos de configuração do VSCode
-.vscode/
+.vscode/.env
