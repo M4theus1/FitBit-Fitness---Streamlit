@@ -4,10 +4,6 @@ scikit-learn
 streamlit
 matplotlib
 seaborn
-<<<<<<< HEAD
 plotly
 openai
 tabulate
-=======
-plotly
->>>>>>> 00709b86fedb65c87c40b55827377b96ee060e41
